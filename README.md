@@ -18,6 +18,26 @@ App disclaimer: `Thong tin chi ho tro tra cuu, khong thay the tu van phap ly.`
 - Saves conversation memory by `session_id` so follow-up questions can use recent context.
 - Uses explicit prompt YAML files under `src/prompts/` for agent behavior.
 
+## Frontend preview
+
+The screenshots below are captured from the actual React/Vite chatbot workspace.
+
+Initial workspace:
+
+![Vietnamese Legal RAG chatbot workspace](docs/assets/frontend-workspace.png)
+
+Real chat demo after a live frontend -> FastAPI -> RAG/LLM request:
+
+![Vietnamese Legal RAG chatbot real chat demo](docs/assets/frontend-chat-demo.png)
+
+Captured demo details:
+
+- Question submitted in the UI: `Dieu kien ket hon theo phap luat Viet Nam`.
+- Backend route: frontend `/api/chat` proxy to FastAPI `/chat`.
+- Result: real assistant response with 8 citation cards.
+- The first citation detail panel was opened before taking the screenshot.
+- Runtime for this capture was about 3.5 minutes on the local setup.
+
 ## Repository structure
 
 ```text
