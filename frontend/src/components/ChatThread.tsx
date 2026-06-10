@@ -22,11 +22,16 @@ export function ChatThread({
   onCitationSelect,
 }: ChatThreadProps) {
   const [draft, setDraft] = useState("");
+  const [areSuggestionsDismissed, setAreSuggestionsDismissed] = useState(false);
   const scrollAnchorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversation.messages]);
+
+  useEffect(() => {
+    setAreSuggestionsDismissed(false);
+  }, [conversation.id]);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -50,6 +55,7 @@ export function ChatThread({
   };
 
   const hasMessages = conversation.messages.length > 0;
+  const showSuggestions = !areSuggestionsDismissed;
 
   return (
     <section className="chat-thread" aria-label="Không gian trò chuyện">
@@ -82,14 +88,25 @@ export function ChatThread({
               Nên nêu lĩnh vực, mốc thời gian hoặc loại nguồn cần kiểm tra để
               câu trả lời bám sát căn cứ hơn.
             </p>
-            <PromptSuggestions prompts={prompts.slice(0, 3)} onSelect={sendPrompt} />
+            {showSuggestions ? (
+              <PromptSuggestions
+                prompts={prompts.slice(0, 3)}
+                onDismiss={() => setAreSuggestionsDismissed(true)}
+                onSelect={sendPrompt}
+              />
+            ) : null}
           </div>
         )}
         <div ref={scrollAnchorRef} />
       </div>
 
-      {hasMessages ? (
-        <PromptSuggestions compact prompts={prompts.slice(0, 3)} onSelect={sendPrompt} />
+      {hasMessages && showSuggestions ? (
+        <PromptSuggestions
+          compact
+          prompts={prompts.slice(0, 3)}
+          onDismiss={() => setAreSuggestionsDismissed(true)}
+          onSelect={sendPrompt}
+        />
       ) : null}
 
       <form className="composer" onSubmit={submit}>

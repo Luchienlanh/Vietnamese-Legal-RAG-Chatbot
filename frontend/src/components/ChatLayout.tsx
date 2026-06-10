@@ -27,7 +27,7 @@ export function ChatLayout({
   onCloseSource,
 }: ChatLayoutProps) {
   return (
-    <div className="chat-layout">
+    <div className={`chat-layout ${isSourceOpen ? "is-source-open" : "is-source-collapsed"}`}>
       <header className="mobile-topbar">
         <button
           aria-label="Mở lịch sử hội thoại"

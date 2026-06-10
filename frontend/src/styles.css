@@ -147,6 +147,16 @@ a {
   background: var(--surface);
 }
 
+@media (min-width: 1241px) {
+  .chat-layout.is-source-collapsed {
+    grid-template-columns: 310px minmax(0, 1fr);
+  }
+
+  .chat-layout.is-source-collapsed .source-shell {
+    display: none;
+  }
+}
+
 .drawer-header,
 .drawer-scrim {
   display: none;
@@ -790,12 +800,33 @@ a {
 }
 
 .prompt-suggestions__header {
-  display: inline-flex;
+  display: flex;
+  min-height: 30px;
   align-items: center;
-  gap: 7px;
+  justify-content: space-between;
+  gap: 10px;
   color: var(--muted-strong);
   font-size: 0.82rem;
   font-weight: 800;
+}
+
+.prompt-suggestions__title {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+}
+
+.prompt-suggestions__dismiss {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  background: var(--surface-raised);
+}
+
+.prompt-suggestions__dismiss:hover {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--line));
+  color: var(--accent-strong);
 }
 
 .prompt-suggestions__grid {
@@ -871,20 +902,30 @@ a {
 }
 
 .source-panel {
+  position: relative;
   display: flex;
   height: 100dvh;
   min-height: 100dvh;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .source-panel__header {
+  position: relative;
+  z-index: 2;
   display: flex;
   min-height: 72px;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   border-bottom: 1px solid var(--line);
+  background: var(--surface);
   padding: 14px 16px;
+}
+
+.source-panel__header > div {
+  min-width: 0;
 }
 
 .source-panel__eyebrow {
@@ -897,12 +938,16 @@ a {
 
 .source-panel h2 {
   margin: 0;
+  overflow-wrap: anywhere;
   font-size: 1rem;
   line-height: 1.3;
 }
 
 .source-panel__close {
+  position: relative;
+  z-index: 3;
   flex: 0 0 auto;
+  pointer-events: auto;
 }
 
 .source-panel__body {
@@ -910,7 +955,9 @@ a {
   align-content: start;
   gap: 16px;
   min-height: 0;
+  flex: 1 1 auto;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 16px;
 }
 
@@ -1168,10 +1215,13 @@ a {
     width: min(420px, 100vw);
   }
 
-  .source-panel,
-  .source-panel__body {
+  .source-panel {
     height: calc(100dvh - 58px);
     min-height: calc(100dvh - 58px);
+  }
+
+  .source-panel__body {
+    min-height: 0;
   }
 }
 
