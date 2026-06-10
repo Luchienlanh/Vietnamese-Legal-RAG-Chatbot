@@ -1,0 +1,93 @@
+id: source_router
+version: 2
+model:
+  provider: nvidia_embeddings
+input_variables:
+  - query
+  - total_k
+output:
+  type: source_route
+  schema:
+    source_policy: law_first | case_first | balanced
+    phapdien_k: integer
+    anle_k: integer
+prompt_design:
+  language: English profile instructions with Vietnamese legal examples and source terms.
+  based_on:
+    - PromptHub agent guidance: tools need clear descriptions, context, and decision boundaries.
+    - respond.io prompt pattern: scenarios and routing conditions must be explicit.
+  accuracy_note: Detailed route profiles improve semantic routing between pháp điển/legal rules and án lệ/court materials.
+router_context: |
+  This router chooses the evidence source strategy for a Vietnamese legal RAG system.
+  It does not answer the user. It determines whether retrieval should prioritize legal rules, case-law materials, or both.
+  Source labels used by code:
+  - phapdien: codified legal rules, pháp điển, legal provisions, procedures, conditions, rights, obligations.
+  - anle: án lệ, court judgments, court decisions, adjudication reasoning, dispute practice.
+profiles:
+  - source_policy: law_first
+    title: Legal rules and codified law first
+    description: |
+      Use law_first when the user primarily asks for current legal rules, statutory provisions, administrative procedures, conditions, required documents, legal definitions, rights, obligations, or legal consequences under Vietnamese law.
+      The best primary source is PHAPDIEN or legal-rule evidence.
+      ANLE can be retrieved only as secondary context if it directly helps explain application in practice.
+
+      Strong law_first signals:
+      - User asks "quy định", "điều kiện", "thủ tục", "hồ sơ", "giấy tờ", "căn cứ pháp lý", "điều luật", "quyền và nghĩa vụ", "xử lý theo luật".
+      - User asks about registration, licensing, legal requirements, statutory obligations, administrative process, or legal definitions.
+      - User does not explicitly ask for án lệ, bản án, court practice, or disputes already adjudicated.
+
+      Vietnamese examples:
+      - "Quy trình đăng ký giấy kết hôn"
+      - "Thủ tục đăng ký kết hôn cần giấy tờ gì?"
+      - "Điều kiện kết hôn là gì?"
+      - "Tóm tắt quy định về hợp đồng lao động"
+      - "Hợp đồng đặt cọc vô hiệu xử lý thế nào theo luật?"
+      - "Điều kiện chuyển nhượng quyền sử dụng đất là gì?"
+
+      Retrieval expectation:
+      - phapdien_k should be high.
+      - anle_k should be low but nonzero when total_k allows secondary context.
+
+  - source_policy: case_first
+    title: Case law and court materials first
+    description: |
+      Use case_first when the user primarily asks for án lệ, bản án, court judgments, court decisions, adjudication reasoning, dispute practice, similar cases, appellate decisions, cassation decisions, or how courts have resolved a dispute.
+      The best primary source is ANLE or court-material evidence.
+      PHAPDIEN can be retrieved only as legal background if needed.
+
+      Strong case_first signals:
+      - User says "án lệ", "bản án", "quyết định của tòa", "tòa án nhận định", "tranh chấp đã xét xử", "vụ án tương tự", "thực tiễn xét xử", "phúc thẩm", "giám đốc thẩm".
+      - User asks to find examples of disputes or judicial reasoning.
+      - User asks how courts usually handle a legal issue.
+
+      Vietnamese examples:
+      - "Tìm án lệ liên quan đến tranh chấp đất đai"
+      - "Có bản án nào về hợp đồng đặt cọc không?"
+      - "Tòa án thường xử lý tranh chấp quyền sử dụng đất như thế nào?"
+      - "Tìm vụ án tương tự về hợp đồng chuyển nhượng đất vô hiệu"
+      - "Nhận định của tòa trong bản án phúc thẩm về tranh chấp lao động"
+
+      Retrieval expectation:
+      - anle_k should be high.
+      - phapdien_k should be low but nonzero when legal background is useful.
+
+  - source_policy: balanced
+    title: Balanced legal rules and case-law retrieval
+    description: |
+      Use balanced when the user explicitly needs both legal-rule sources and case-law/court-practice sources, or asks to compare written law with practical adjudication.
+      The retrieval should include both PHAPDIEN and ANLE.
+
+      Strong balanced signals:
+      - User asks for "quy định và thực tiễn xét xử".
+      - User asks for "điều luật và án lệ liên quan".
+      - User asks to compare "pháp điển" with "án lệ", "bản án", or court practice.
+      - User asks whether a rule is applied differently in court practice.
+
+      Vietnamese examples:
+      - "So sánh quy định trong pháp điển và văn bản gốc"
+      - "Quy định và thực tiễn xét xử về hợp đồng đặt cọc"
+      - "Điều luật và án lệ liên quan đến tranh chấp đất đai"
+      - "Pháp luật quy định thế nào và tòa án thường xử lý ra sao?"
+
+      Retrieval expectation:
+      - phapdien_k and anle_k should be balanced according to total_k.

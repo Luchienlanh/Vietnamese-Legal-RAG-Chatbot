@@ -588,17 +588,23 @@ def order_evidence_by_policy(evidence, source_policy):
     )
 
 
+def source_route_get(source_route, key, default=None):
+    if isinstance(source_route, dict):
+        return source_route.get(key, default)
+    return getattr(source_route, key, default)
+
+
 def route_for_phapdien(route, source_route):
-    if source_route.source_policy == "law_first":
+    if source_route_get(source_route, "source_policy") == "law_first":
         return route
 
     return None
 
 
-def search_all(query: str, k: int = 8):
-    route = route_query(query)
-    source_route = route_sources(query, total_k=k)
-    phrases = extract_legal_phrases(query, route=route)
+def search_all(query: str, k: int = 8, route=None, source_route=None, phrases=None):
+    route = route if route is not None else route_query(query)
+    source_route = source_route if source_route is not None else route_sources(query, total_k=k)
+    phrases = phrases if phrases is not None else extract_legal_phrases(query, route=route)
     phapdien_route = route_for_phapdien(route, source_route)
 
     phapdien_vector = search_phapdien(query, k=50, route=phapdien_route)
@@ -616,18 +622,18 @@ def search_all(query: str, k: int = 8):
     evidence = rerank_evidence(evidence, query)
 
     quotas = {
-        "phapdien": source_route.phapdien_k,
-        "anle": source_route.anle_k,
+        "phapdien": source_route_get(source_route, "phapdien_k", 0),
+        "anle": source_route_get(source_route, "anle_k", 0),
     }
     evidence = diversify_evidence(evidence, quotas)
     evidence = [expand_anle_evidence(expand_phapdien_evidence(item)) for item in evidence]
-    evidence = order_evidence_by_policy(evidence, source_route.source_policy)
+    evidence = order_evidence_by_policy(evidence, source_route_get(source_route, "source_policy"))
 
     return {
-        "intent": source_route.source_policy,
+        "intent": source_route_get(source_route, "source_policy"),
         "quotas": quotas,
         "route": route,
-        "source_route": source_route.__dict__,
+        "source_route": source_route if isinstance(source_route, dict) else source_route.__dict__,
         "query_phrases": phrases,
         "evidence": evidence,
     }
