@@ -4,12 +4,14 @@ import re
 import sqlite3
 
 from src.agents.answer_generator_agent import AnswerGeneratorAgent
+from src.agents.answer_mode_agent import AnswerModeAgent
 from src.agents.memory_rewrite_agent import MemoryRewriteAgent
 from src.agents.phrase_extractor_agent import PhraseExtractorAgent
 from src.agents.source_router_agent import SourceRouterAgent
 from src.memory.conversation import load_memory, save_turn
 from src.retrieval.repair import repair_missing_evidence
 from src.retrieval.ontology_router import route_query
+from src.retrieval.exact_response import apply_answer_mode
 from src.retrieval.retriever import search_all
 from src.retrieval.validator import apply_validation, validate_evidence
 
@@ -179,6 +181,7 @@ def prepare_chat_search(session_id: str, message: str, k: int = 8, validation_mo
     memory = load_memory(session_id)
     rewrite_result = MemoryRewriteAgent().run(message, memory)
     rewritten_query = rewrite_result["rewritten_query"]
+    answer_mode = AnswerModeAgent().run(message, rewritten_query, memory)
 
     route = route_query(rewritten_query)
     source_route = SourceRouterAgent().run(rewritten_query, total_k=k)
@@ -191,6 +194,7 @@ def prepare_chat_search(session_id: str, message: str, k: int = 8, validation_mo
         source_route=source_route,
         phrases=phrases,
     )
+    search_result["answer_mode"] = answer_mode
     memory_references = lookup_articles_from_memory(message, rewrite_result, memory)
     search_result = prepend_memory_reference_evidence(search_result, memory_references)
 
@@ -199,6 +203,7 @@ def prepare_chat_search(session_id: str, message: str, k: int = 8, validation_mo
         search_result=search_result,
         validation_mode=validation_mode,
     )
+    search_result = apply_answer_mode(search_result, answer_mode, memory)
 
     return {
         "session_id": session_id,
@@ -206,6 +211,7 @@ def prepare_chat_search(session_id: str, message: str, k: int = 8, validation_mo
         "memory": memory,
         "rewrite_result": rewrite_result,
         "rewritten_query": rewritten_query,
+        "answer_mode": answer_mode,
         "search_result": search_result,
         "validation_debug": validation_debug,
     }
@@ -234,12 +240,15 @@ def run_legal_rag_chat(session_id: str, message: str, k: int = 8, validation_mod
     search_result = prepared["search_result"]
     validation_debug = prepared["validation_debug"]
 
-    answer_result = AnswerGeneratorAgent().run(
-        original_query=message,
-        rewrite_result=rewrite_result,
-        memory=memory,
-        search_result=search_result,
-    )
+    if search_result.get("direct_answer"):
+        answer_result = {"answer": search_result["direct_answer"]}
+    else:
+        answer_result = AnswerGeneratorAgent().run(
+            original_query=message,
+            rewrite_result=rewrite_result,
+            memory=memory,
+            search_result=search_result,
+        )
 
     save_turn(
         session_id=session_id,
@@ -258,6 +267,7 @@ def run_legal_rag_chat(session_id: str, message: str, k: int = 8, validation_mod
         "quotas": search_result["quotas"],
         "route": search_result.get("route"),
         "source_route": search_result.get("source_route"),
+        "answer_mode": search_result.get("answer_mode"),
         "query_phrases": search_result.get("query_phrases"),
         "evidence": search_result["evidence"],
         "validation_mode": validation_mode,

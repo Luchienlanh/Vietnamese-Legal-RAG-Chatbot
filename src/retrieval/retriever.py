@@ -344,6 +344,115 @@ def expand_anle_evidence(item, before=3, after=3, max_chars=6000):
 
     return expanded
 
+
+def resolve_anle_doc_name(item):
+    if item.get("source_type") != "anle":
+        return None
+
+    metadata = item.get("metadata", {})
+    doc_name = metadata.get("doc_name")
+
+    if doc_name:
+        return doc_name
+
+    documents = load_anle_documents()
+    candidates = {
+        normalize_key_text(value)
+        for value in [
+            item.get("title"),
+            item.get("source_url"),
+            metadata.get("title"),
+            metadata.get("subject"),
+            metadata.get("doc_code"),
+            metadata.get("detail_url"),
+            metadata.get("pdf_url"),
+        ]
+        if value
+    }
+
+    if not candidates:
+        return None
+
+    for candidate_doc_name, doc_meta in documents.items():
+        values = {
+            normalize_key_text(value)
+            for value in [
+                candidate_doc_name,
+                doc_meta.get("title"),
+                doc_meta.get("subject"),
+                doc_meta.get("doc_code"),
+                doc_meta.get("detail_url"),
+                doc_meta.get("pdf_url"),
+            ]
+            if value
+        }
+
+        if candidates & values:
+            return candidate_doc_name
+
+    return None
+
+
+def expand_anle_full_document(item, max_chars=120000):
+    if item.get("source_type") != "anle":
+        return item
+
+    doc_name = resolve_anle_doc_name(item)
+    if not doc_name:
+        return item
+
+    paragraphs = load_anle_paragraphs().get(doc_name)
+    if not paragraphs:
+        return item
+
+    documents = load_anle_documents()
+    document_metadata = dict(documents.get(doc_name, {}))
+    metadata = {**document_metadata, **dict(item.get("metadata", {}))}
+    title = (
+        item.get("title")
+        or metadata.get("title")
+        or metadata.get("subject")
+        or metadata.get("doc_code")
+        or doc_name
+    )
+    detail_url = item.get("source_url") or metadata.get("detail_url") or metadata.get("pdf_url")
+
+    content_parts = [f"Thông tin nguồn: {title}"]
+    if detail_url:
+        content_parts.append(f"Nguồn: {detail_url}")
+
+    content_parts.append("Toàn văn theo dữ liệu đoạn của bản án/án lệ:")
+
+    for paragraph in paragraphs:
+        marker = paragraph.get("paragraph_marker") or paragraph["paragraph_id"]
+        page = paragraph.get("page")
+
+        prefix = f"[{marker}"
+        if page:
+            prefix += f", trang {page}"
+        prefix += "]"
+
+        content_parts.append(f"{prefix} {paragraph.get('text', '')}")
+
+    expanded_content = "\n".join(content_parts).strip()
+    truncated = False
+
+    if max_chars and len(expanded_content) > max_chars:
+        expanded_content = expanded_content[:max_chars] + "\n\n[Đã rút gọn do nội dung vượt quá giới hạn hiển thị.]"
+        truncated = True
+
+    expanded = dict(item)
+    expanded["title"] = title
+    expanded["source_url"] = detail_url
+    expanded["content"] = expanded_content
+    expanded["expanded_content"] = expanded_content
+    expanded["context_mode"] = "anle_full_document"
+    expanded["metadata"] = metadata
+    expanded["metadata"]["doc_name"] = doc_name
+    expanded["metadata"]["full_document_truncated"] = truncated
+
+    return expanded
+
 _anle_paragraphs_cache = None
 
 

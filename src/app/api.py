@@ -157,6 +157,7 @@ def chat_endpoint(request: ChatRequest) -> dict:
         "rewritten_query": result.get("rewritten_query"),
         "rewrite": result.get("rewrite"),
         "intent": result.get("intent"),
+        "answer_mode": result.get("answer_mode"),
         "quotas": result.get("quotas"),
         "validation_mode": result.get("validation_mode"),
         "sources": compact_sources(result.get("evidence") or []),
@@ -167,6 +168,7 @@ def chat_endpoint(request: ChatRequest) -> dict:
             {
                 "route": result.get("route"),
                 "source_route": result.get("source_route"),
+                "answer_mode": result.get("answer_mode"),
                 "query_phrases": result.get("query_phrases"),
                 "validation_1": compact_validation(result.get("validation_1")),
                 "validation_2": compact_validation(result.get("validation_2")),
@@ -198,6 +200,7 @@ def search_endpoint(request: ChatRequest) -> dict:
         "rewritten_query": prepared["rewritten_query"],
         "rewrite": prepared["rewrite_result"],
         "intent": search_result.get("intent"),
+        "answer_mode": search_result.get("answer_mode"),
         "quotas": search_result.get("quotas"),
         "validation_mode": request.validation_mode,
         "sources": compact_sources(search_result.get("evidence") or []),
@@ -207,6 +210,7 @@ def search_endpoint(request: ChatRequest) -> dict:
         response["debug"] = safe_json({
             "route": search_result.get("route"),
             "source_route": search_result.get("source_route"),
+            "answer_mode": search_result.get("answer_mode"),
             "query_phrases": search_result.get("query_phrases"),
             "validation_1": compact_validation(validation_debug.get("validation_1")),
             "validation_2": compact_validation(validation_debug.get("validation_2")),
