@@ -36,41 +36,41 @@ def build_answer_policy(search_result):
 
     if mode == "summary":
         mode_policy.append(
-            "- Người dùng yêu cầu tóm tắt. Chỉ tóm tắt các ý chính có căn cứ; không chép nguyên văn dài toàn bộ điều khoản hoặc bản án."
+            "- The user asks for a summary. Summarize only supported key points; do not reproduce long full-text provisions or full judgments."
         )
     elif mode == "detail_case":
         mode_policy.append(
-            "- Người dùng yêu cầu phân tích chi tiết án lệ/bản án. Ưu tiên nguồn ANLE, nêu sự kiện, vấn đề pháp lý, lập luận, kết quả và ý nghĩa nếu CONTEXT hỗ trợ."
+            "- The user asks for detailed case-law analysis. Prioritize ANLE/court evidence and explain facts, legal issues, reasoning, outcome, and relevance only when CONTEXT supports them."
         )
     elif mode == "full_provision":
         mode_policy.append(
-            "- Người dùng yêu cầu nguyên văn/toàn bộ điều khoản. Nếu chưa có direct answer, hãy trích nguyên văn từ CONTEXT đầy đủ nhất có thể và không tóm tắt."
+            "- The user asks for exact/full provision text. If a direct exact answer is unavailable, quote the relevant provision from CONTEXT as fully as possible and do not summarize it."
         )
     elif mode == "full_case":
         mode_policy.append(
-            "- Người dùng yêu cầu toàn văn án lệ/bản án. Nếu chưa có direct answer, hãy trích nội dung nguồn ANLE đầy đủ nhất có thể và không tóm tắt."
+            "- The user asks for full case/precedent/judgment text. If a direct full-document answer is unavailable, quote the ANLE/court source from CONTEXT as fully as possible and do not summarize it."
         )
 
     if source_policy == "law_first":
         source_policy_text = """
-- Câu hỏi ưu tiên quy định pháp luật. Trả lời trọng tâm bằng nguồn PHAPDIEN.
-- Chỉ nhắc bản án/án lệ nếu nguồn ANLE có nội dung trực tiếp bổ sung cho câu trả lời.
-- Không viết câu kiểu "không có thông tin về bản án/án lệ" nếu câu hỏi không yêu cầu bản án/án lệ.
+- The question prioritizes legal rules. Focus the answer on PHAPDIEN/legal-rule sources.
+- Mention ANLE/court sources only when they directly add useful case-law context.
+- Do not say there is no case-law information if the user did not ask for case law.
 """.strip()
         return "\n".join(mode_policy + [source_policy_text]).strip()
 
     if source_policy == "case_first":
         source_policy_text = """
-- Câu hỏi ưu tiên bản án, án lệ hoặc thực tiễn xét xử. Trả lời trọng tâm bằng nguồn ANLE.
-- Nếu câu hỏi đang tìm bản án, liệt kê các nguồn ANLE phù hợp nhất trong ngữ cảnh, ưu tiên 3-6 bản án/quyết định nếu có.
-- Mỗi mục cần nêu số/tên bản án hoặc quyết định, vấn đề liên quan trực tiếp, và trích dẫn nguồn.
-- Chỉ dùng PHAPDIEN để nêu quy định nền nếu thật sự cần.
-- Không biến câu trả lời thành phần giải thích luật dài nếu câu hỏi chỉ hỏi tìm bản án.
+- The question prioritizes judgments, precedents, or court practice. Focus the answer on ANLE/court sources.
+- If the user is searching for cases, list the most relevant ANLE/court sources in CONTEXT, preferably 3-6 judgments/decisions when available.
+- For each listed item, state the case/judgment/decision title or number, the directly related legal issue, and the supporting citation.
+- Use PHAPDIEN/legal-rule sources only for necessary legal background.
+- Do not turn a case-search answer into a long general legal explanation when the user only asks to find cases.
 """.strip()
         return "\n".join(mode_policy + [source_policy_text]).strip()
 
     source_policy_text = """
-- Câu hỏi cần cả quy định pháp luật và thực tiễn xét xử. Tách rõ hai phần nếu cả hai loại nguồn đều có căn cứ trực tiếp.
+- The question may need both legal rules and court practice. Separate legal-rule analysis and case-law/court-practice analysis when both are directly supported by CONTEXT.
 """.strip()
     return "\n".join(mode_policy + [source_policy_text]).strip()
 
